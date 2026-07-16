@@ -122,11 +122,18 @@ class Database:
                     for ing in meal["ingredients"]:
                         key = ing["name"].lower()
                         if key in ingredients:
-                            ingredients[key]["amount"] += f" + {ing['amount']}"
+                            try:
+                                ingredients[key]["amount"] += float(ing["amount"])
+                            except (ValueError, TypeError):
+                                ingredients[key]["amount"] = f"{ingredients[key]['amount']} + {ing['amount']}"
                         else:
+                            try:
+                                amount = float(ing["amount"])
+                            except (ValueError, TypeError):
+                                amount = ing["amount"]
                             ingredients[key] = {
                                 "name": ing["name"],
-                                "amount": ing["amount"],
+                                "amount": amount,
                                 "unit": ing.get("unit", ""),
                             }
 

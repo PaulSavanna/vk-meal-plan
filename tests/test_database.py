@@ -83,3 +83,32 @@ async def test_delete_recipe(db):
     await db.delete_recipe(recipe_id, 123)
     recipes = await db.get_recipes(123)
     assert len(recipes) == 0
+
+
+@pytest.mark.asyncio
+async def test_empty_week_menu_shopping_list(db):
+    """Empty weekly menu should return empty shopping list without errors."""
+    await db.init()
+    items = await db.get_shopping_list(999)
+    assert items == []
+
+
+@pytest.mark.asyncio
+async def test_duplicate_ingredients_summed(db):
+    """Duplicate ingredients across dishes should be summed numerically, not concatenated as strings."""
+    await db.init()
+    r1 = Recipe(user_id=123, name="Овсянка", meal_type="breakfast",
+                ingredients=[Ingredient(name="овсянка", amount="100", unit="г")])
+    r2 = Recipe(user_id=123, name="Каша", meal_type="lunch",
+                ingredients=[Ingredient(name="овсянка", amount="50", unit="г")])
+    id1 = await db.add_recipe(r1)
+    id2 = await db.add_recipe(r2)
+
+    await db.set_week_plan(123, "Пн", "breakfast", id1)
+    await db.set_week_plan(123, "Пн", "lunch", id2)
+
+    items = await db.get_shopping_list(123)
+    oats = [i for i in items if i["name"] == "овсянка"]
+    assert len(oats) == 1
+    assert oats[0]["amount"] == 150
+    assert oats[0]["unit"] == "г"
